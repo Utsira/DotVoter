@@ -17,9 +17,8 @@ public func wsRoutes(_ webSocketServer: NIOWebSocketServer) {
 		let senderId = req.http.remotePeer.description
 		room.add(connection: socket, sender: senderId)
 		
-		let payload = Payload(action: .new, cards: room.cardManager.cards.map(transform: {_, card in
-			card.partial
-		}))
+		let payload = Payload(action: .new, cards: room.cardManager.cards.array.map{ $0.partial
+		})
 		let data = try encoder.encode(payload)
 		socket.send(data)
 		socket.onText { ws, text in
@@ -47,6 +46,6 @@ func addTestCards(to room: Room) {
 		PartialCard(id: UUID(), message: "test blah \(i)", category: "hi", voteCount: i)
 	}
 	cards.forEach { card in
-		room.cardManager.cards[card.id] = card.complete(with: UUID().uuidString)
+		room.cardManager.cards.append(card.complete(with: UUID().uuidString))
 	}
 }

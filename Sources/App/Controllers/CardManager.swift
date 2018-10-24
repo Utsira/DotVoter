@@ -14,40 +14,38 @@ enum Result<T> {
 
 final class CardManager {
 	
-	var cards = SafeDictionary<UUID, Card>()
+	var cards = SafeArray<Card>()
 	
 	func handle(payload: Payload, author: String) -> Result<Payload> {
 		let newOrUpdatedCards: [PartialCard]
 		switch payload.action {
 		case .new:
 			newOrUpdatedCards = payload.cards.compactMap { partial in
-				guard cards[partial.id] == nil else { return nil }
+				guard !cards.contains(where: {$0.id == partial.id}) else { return nil }
 				let new = partial.complete(with: author)
-				cards[partial.id] = new
+				cards.append(new)
 				return partial
 			}
 		case .upVote:
 			newOrUpdatedCards = payload.cards.compactMap { partial in
-				guard var card = cards[partial.id] else { return nil }
+				guard let card = cards.first(where: {$0.id == partial.id}) else { return nil }
 				card.voteCount += 1
-				cards[partial.id] = card
 				return card.partial
 			}
 		case .downVote:
 			newOrUpdatedCards = payload.cards.compactMap { partial in
-				guard var card = cards[partial.id],
+				guard let card = cards.first(where: {$0.id == partial.id}),
 					card.voteCount > 0
 					else { return nil }
 				card.voteCount -= 1
-				cards[partial.id] = card
 				return card.partial
 			}
 		case .edit:
 			newOrUpdatedCards = payload.cards.compactMap { partial in
-				guard let card = cards[partial.id],
+				guard let card = cards.first(where: {$0.id == partial.id}),
 					card.author == author
 					else { return nil }
-				cards[partial.id] = partial.complete(with: author)
+				card.message = partial.message
 				return partial
 			}
 		}

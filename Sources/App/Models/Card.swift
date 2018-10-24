@@ -18,12 +18,20 @@ struct PartialCard: Content, Equatable {
 	}
 }
 
-struct Card: Content {
+final class Card: Content {
 	let id: UUID
 	let author: String
-	let message: String
-	let category: String
+	var message: String
+	var category: String
 	var voteCount: Int
+	
+	init(id: UUID, author: String, message: String, category: String, voteCount: Int) {
+		self.id = id
+		self.author = author
+		self.message = message
+		self.category = category
+		self.voteCount = voteCount
+	}
 	
 	var partial: PartialCard {
 		return PartialCard(id: id, message: message, category: category, voteCount: voteCount)
