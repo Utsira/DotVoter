@@ -18,6 +18,7 @@ final class Room {
 	
 	func broadcast(data: Data) { //, toAllExcept sender: String
 		connections.forEach { (_, socket) in
+			//socket.send(text)
 			socket.send(data)
 		}
 	}

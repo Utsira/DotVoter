@@ -9,6 +9,7 @@ import Vapor
 
 public func wsRoutes(_ webSocketServer: NIOWebSocketServer) {
 	let room = Room()
+	addTestCards(to: room)
 	let encoder = JSONEncoder()
 	let decoder = JSONDecoder()
 	
@@ -16,26 +17,36 @@ public func wsRoutes(_ webSocketServer: NIOWebSocketServer) {
 		let senderId = req.http.remotePeer.description
 		room.add(connection: socket, sender: senderId)
 		
+		let payload = Payload(action: .new, cards: room.cardManager.cards.map(transform: {_, card in
+			card.partial
+		}))
+		let data = try encoder.encode(payload)
+		socket.send(data)
 		socket.onText { ws, text in
-			ws.send("You said \(text)")
-			
-		}
-		socket.onBinary { ws, data in
-			guard let payload = try? decoder.decode(Payload.self, from: data) else {
+			guard let data = text.data(using: .utf8), let payload = try? decoder.decode(Payload.self, from: data) else {
 				ws.send("Bad payload")
 				return
 			}
 			let outcome = room.cardManager.handle(payload: payload, author: senderId)
 			switch outcome {
-			case .success(let card):
-				guard let encodedCard = try? encoder.encode(card.partial) else {
+			case .success(let payload):
+				guard let payloadData = try? encoder.encode(payload) else {
 					ws.send("Could not format return value")
 					return
 				}
-				room.broadcast(data: encodedCard)
+				room.broadcast(data: payloadData)
 			case .failure(let message):
 				ws.send(message)
 			}
 		}
+	}
+}
+
+func addTestCards(to room: Room) {
+	let cards = (0..<10).map { i in
+		PartialCard(id: UUID(), message: "test blah \(i)", category: "hi", voteCount: i)
+	}
+	cards.forEach { card in
+		room.cardManager.cards[card.id] = card.complete(with: UUID().uuidString)
 	}
 }

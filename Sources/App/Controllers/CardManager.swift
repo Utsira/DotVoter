@@ -14,45 +14,43 @@ enum Result<T> {
 
 final class CardManager {
 	
-	private var cards = SafeDictionary<UUID, Card>()
+	var cards = SafeDictionary<UUID, Card>()
 	
-	func handle(payload: Payload, author: String) -> Result<Card> {
-		var card: Card
+	func handle(payload: Payload, author: String) -> Result<Payload> {
+		let newOrUpdatedCards: [PartialCard]
 		switch payload.action {
 		case .new:
-			guard cards[payload.card.id] == nil else {
-				return .failure("Card already exists")
+			newOrUpdatedCards = payload.cards.compactMap { partial in
+				guard cards[partial.id] == nil else { return nil }
+				let new = partial.complete(with: author)
+				cards[partial.id] = new
+				return partial
 			}
-			card = payload.card.complete(with: author)
-			card.voteCount = 0
 		case .upVote:
-			guard let retreived = cards[payload.card.id] else {
-				return .failure("Card does not exist")
+			newOrUpdatedCards = payload.cards.compactMap { partial in
+				guard var card = cards[partial.id] else { return nil }
+				card.voteCount += 1
+				cards[partial.id] = card
+				return card.partial
 			}
-			card = retreived
-			card.voteCount += 1
 		case .downVote:
-			guard let retreived = cards[payload.card.id] else {
-				return .failure("Card does not exist")
+			newOrUpdatedCards = payload.cards.compactMap { partial in
+				guard var card = cards[partial.id],
+					card.voteCount > 0
+					else { return nil }
+				card.voteCount -= 1
+				cards[partial.id] = card
+				return card.partial
 			}
-			guard retreived.voteCount > 0 else {
-				return .failure("Vote count can't be negative")
-			}
-			card = retreived
-			card.voteCount -= 1
-		case .resetVotes:
-			
 		case .edit:
-			guard let retreived = cards[payload.card.id] else {
-				return .failure("Card does not exist")
+			newOrUpdatedCards = payload.cards.compactMap { partial in
+				guard let card = cards[partial.id],
+					card.author == author
+					else { return nil }
+				cards[partial.id] = partial.complete(with: author)
+				return partial
 			}
-			guard retreived.author == author else {
-				return .failure("You cannot edit another user's card")
-			}
-			card = payload.card.complete(with: author)
-			card.voteCount = retreived.voteCount
 		}
-		cards[payload.card.id] = card
-		return .success(card)
+		return .success(Payload(action: payload.action, cards: newOrUpdatedCards))
 	}
 }

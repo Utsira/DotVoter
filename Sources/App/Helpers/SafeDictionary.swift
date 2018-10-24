@@ -18,14 +18,53 @@ final class SafeDictionary<Key: Hashable, Value>: ExpressibleByDictionaryLiteral
 		}
 	}
 	
+	init<S>(keysAndValues: S, uniquingKeysWith combine: (Dictionary<Key, Value>.Value, Dictionary<Key, Value>.Value) throws -> Dictionary<Key, Value>.Value) rethrows where S : Sequence, S.Element == (Key, Value) {
+		try queue.sync(flags: .barrier) {
+			cache = try Dictionary(keysAndValues, uniquingKeysWith: combine)
+		}
+	}
+	
 	func remove(at key: Key) -> Value? {
 		return queue.sync(flags: .barrier) {
 			cache.removeValue(forKey: key)
 		}
 	}
 	
+	func contains(where test: ((key: Key, value: Value)) throws -> Bool) rethrows -> Bool {
+		return try queue.sync {
+			return try cache.contains(where: test)
+		}
+	}
+	
+	func merge(other: [Key : Value], uniquingKeysWith disambiguator: (Value, Value) throws -> Value = { a, b in b }) rethrows {
+		try queue.sync(flags: .barrier) {
+			try cache.merge(other, uniquingKeysWith: disambiguator)
+		}
+	}
+	
+	func merge(other: [(Key, Value)], uniquingKeysWith disambiguator: (Value, Value) throws -> Value = { a, b in b }) rethrows {
+		
+		try queue.sync(flags: .barrier) {
+			try cache.merge(other, uniquingKeysWith: disambiguator)
+		}
+	}
+	
+	func map<T>(transform: ((key: Key, value: Value)) throws -> T ) rethrows -> [T] {
+		return try queue.sync {
+			return try cache.map(transform)
+		}
+	}
+	
+	func mapValues<T>(transform: (Value) throws -> T) rethrows -> [Key: T] {
+		return try queue.sync {
+			return try cache.mapValues(transform)
+		}
+	}
+	
 	func forEach(body: ((key: Key, value: Value)) throws -> Void) rethrows {
-		try cache.forEach(body)
+		try queue.sync(flags: .barrier) {
+			try cache.forEach(body)
+		}
 	}
 	
 	subscript(_ key: Key) -> Value? {

@@ -7,12 +7,12 @@
 
 import Vapor
 
-struct PartialCard: Content {
+struct PartialCard: Content, Equatable {
 	let id: UUID
 	var message: String
 	let category: String
 	let voteCount: Int
-	static let blah: String = "nnn"
+
 	func complete(with author: String) -> Card {
 		return Card(id: id, author: author, message: message, category: category, voteCount: voteCount)
 	}

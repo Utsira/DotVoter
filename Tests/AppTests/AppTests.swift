@@ -106,26 +106,37 @@ class RoutesTestCase: XCTestCase {
 	
 	func readdNewCard(_ partial: PartialCard, socket: WebSocket) throws {
 		let await = expectation(description: "will receive response from server")
-		let payload = Payload(action: .new, card: partial)
+		let awaitEmpty = expectation(description: "will receive response from server")
+		let payload = Payload(action: .new, cards: [partial])
 		let data = try encoder.encode(payload)
-		socket.onText { socket, text in
-			XCTAssertEqual(text, "Card already exists")
-			await.fulfill()
+		socket.onBinary { socket, data in
+			if String(data: data, encoding: .utf8) == "[]" {
+				awaitEmpty.fulfill()
+				return
+			}
+			if let cards = try? self.decoder.decode([PartialCard].self, from: data) {
+				XCTAssertEqual(cards, [partial])
+				await.fulfill()
+				return
+			}
+			
 		}
 		socket.send(data)
 		wait(for: [await], timeout: 5)
+		socket.send(data)
+		wait(for: [awaitEmpty], timeout: 5)
 	}
 	
-	func addNewCard(_ partial: PartialCard, socket: WebSocket) throws {
+	func addNewCards(_ partials: [PartialCard], socket: WebSocket) throws {
 		let await = expectation(description: "will receive response from server")
-		let payload = Payload(action: .new, card: partial)
+		let payload = Payload(action: .new, cards: partials)
 		let data = try encoder.encode(payload)
 		socket.onBinary { socket, data in
-			guard let card = try? self.decoder.decode(PartialCard.self, from: data) else {
+			guard let cards = try? self.decoder.decode([PartialCard].self, from: data) else {
 				XCTFail("couldn't decipher response")
 				return
 			}
-			XCTAssertEqual(card.message, partial.message)
+			XCTAssertEqual(cards, partials)
 			await.fulfill()
 		}
 		socket.send(data)
@@ -133,18 +144,18 @@ class RoutesTestCase: XCTestCase {
 	}
 	
 	@discardableResult
-	func upvoteCard(_ partial: PartialCard, socket: WebSocket) throws -> PartialCard {
+	func upvoteCards(_ partials: [PartialCard], socket: WebSocket) throws -> [PartialCard] {
 		let await = expectation(description: "will receive response from server")
-		let payload = Payload(action: .upVote, card: partial)
+		let payload = Payload(action: .upVote, cards: partials)
 		let data = try encoder.encode(payload)
-		var updated = partial
+		var updated = partials
 		socket.onBinary { socket, data in
-			guard let card = try? self.decoder.decode(PartialCard.self, from: data) else {
+			guard let cards = try? self.decoder.decode([PartialCard].self, from: data) else {
 				XCTFail("couldn't decipher response")
 				return
 			}
-			XCTAssertEqual(card.voteCount, partial.voteCount + 1)
-			updated = card
+			XCTAssertEqual(cards[0].voteCount, partials[0].voteCount + 1)
+			updated = cards
 			await.fulfill()
 		}
 		socket.send(data)
@@ -153,18 +164,18 @@ class RoutesTestCase: XCTestCase {
 	}
 	
 	@discardableResult
-	func downvoteCard(_ partial: PartialCard, socket: WebSocket) throws -> PartialCard {
+	func downvoteCards(_ partials: [PartialCard], socket: WebSocket) throws -> [PartialCard] {
 		let await = expectation(description: "will receive response from server")
-		let payload = Payload(action: .downVote, card: partial)
+		let payload = Payload(action: .downVote, cards: partials)
 		let data = try encoder.encode(payload)
-		var updated = partial
+		var updated = partials
 		socket.onBinary { socket, data in
-			guard let card = try? self.decoder.decode(PartialCard.self, from: data) else {
+			guard let cards = try? self.decoder.decode([PartialCard].self, from: data) else {
 				XCTFail("couldn't decipher response")
 				return
 			}
-			XCTAssertEqual(card.voteCount, partial.voteCount - 1)
-			updated = card
+			XCTAssertEqual(cards[0].voteCount, partials[0].voteCount - 1)
+			updated = cards
 			await.fulfill()
 		}
 		socket.send(data)
@@ -173,20 +184,23 @@ class RoutesTestCase: XCTestCase {
 	}
 	
 	@discardableResult
-	func editCard(_ partial: PartialCard, socket: WebSocket) throws -> PartialCard {
+	func editCards(_ partials: [PartialCard], socket: WebSocket) throws -> [PartialCard] {
 		let await = expectation(description: "will receive response from server")
-		var partial = partial
-		partial.message = "wowzers"
-		let payload = Payload(action: .edit, card: partial)
+		var partials = partials.map { partial -> PartialCard in
+			var new = partial
+			new.message = "wowzers"
+			return new
+		}
+		let payload = Payload(action: .edit, cards: partials)
 		let data = try encoder.encode(payload)
-		var updated = partial
+		var updated = partials
 		socket.onBinary { socket, data in
-			guard let card = try? self.decoder.decode(PartialCard.self, from: data) else {
+			guard let cards = try? self.decoder.decode([PartialCard].self, from: data) else {
 				XCTFail("couldn't decipher response")
 				return
 			}
-			XCTAssertEqual(card.message, partial.message)
-			updated = card
+			XCTAssertEqual(cards, partials)
+			updated = cards
 			await.fulfill()
 		}
 		socket.send(data)
@@ -209,30 +223,29 @@ class RoutesTestCase: XCTestCase {
 	func testNewCard() throws {
 		let socket = try openSocket()
 		let partial = PartialCard(id: UUID(), message: "Hi there", category: "default", voteCount: 0)
-		try addNewCard(partial, socket: socket)
+		try addNewCards([partial], socket: socket)
 		socket.close()
 	}
 	
 	func testUpVoteCard() throws {
 		let socket = try openSocket()
 		let partial = PartialCard(id: UUID(), message: "Hi there", category: "default", voteCount: 0)
-		try addNewCard(partial, socket: socket)
-		try upvoteCard(partial, socket: socket)
+		try addNewCards([partial], socket: socket)
+		try upvoteCards([partial], socket: socket)
 		socket.close()
 	}
 	
 	func testEditCard() throws {
 		let socket = try openSocket()
 		let partial = PartialCard(id: UUID(), message: "Hi there", category: "default", voteCount: 0)
-		try addNewCard(partial, socket: socket)
-		try editCard(partial, socket: socket)
+		try addNewCards([partial], socket: socket)
+		try editCards([partial], socket: socket)
 		socket.close()
 	}
 	
 	func testCannotAddSameCardTwice() throws {
 		let socket = try openSocket()
 		let partial = PartialCard(id: UUID(), message: "Hi there", category: "default", voteCount: 0)
-		try addNewCard(partial, socket: socket)
 		try readdNewCard(partial, socket: socket)
 		socket.close()
 	}
@@ -241,10 +254,10 @@ class RoutesTestCase: XCTestCase {
 		let socket = try openSocket()
 		let await = expectation(description: "will receive response from server")
 		let partial = PartialCard(id: UUID(), message: "Hi there", category: "default", voteCount: 0)
-		let payload = Payload(action: .upVote, card: partial)
+		let payload = Payload(action: .upVote, cards: [partial])
 		let data = try encoder.encode(payload)
-		socket.onText { socket, text in
-			XCTAssertEqual(text, "Card does not exist")
+		socket.onBinary { socket, data in
+			XCTAssertEqual(String(data: data, encoding: .utf8), "[]")
 			await.fulfill()
 		}
 		socket.send(data)
@@ -253,16 +266,16 @@ class RoutesTestCase: XCTestCase {
 	
 	func testCannotDownvoteCardAtZeroVotes() throws {
 		let socket = try openSocket()
-		var partial = PartialCard(id: UUID(), message: "Hi there", category: "default", voteCount: 0)
-		try addNewCard(partial, socket: socket)
-		partial = try upvoteCard(partial, socket: socket)
-		partial = try downvoteCard(partial, socket: socket)
+		var partials = [PartialCard(id: UUID(), message: "Hi there", category: "default", voteCount: 0)]
+		try addNewCards(partials, socket: socket)
+		partials = try upvoteCards(partials, socket: socket)
+		partials = try downvoteCards(partials, socket: socket)
 		
 		let await = expectation(description: "will receive response from server")
-		let payload = Payload(action: .downVote, card: partial)
+		let payload = Payload(action: .downVote, cards: partials)
 		let data = try encoder.encode(payload)
-		socket.onText { socket, text in
-			XCTAssertEqual(text, "Vote count can't be negative")
+		socket.onBinary { socket, data in
+			XCTAssertEqual(String(data: data, encoding: .utf8), "[]")
 			await.fulfill()
 		}
 		socket.send(data)

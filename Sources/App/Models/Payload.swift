@@ -10,8 +10,8 @@ import Vapor
 
 struct Payload: Content {
 	enum Action: String, Codable {
-		case new, edit, upVote, downVote, resetVotes
+		case new, edit, upVote, downVote
 	}
 	let action: Action
-	let card: PartialCard
+	let cards: [PartialCard]
 }
