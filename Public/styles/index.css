@@ -27,7 +27,7 @@ body { font-family: sans-serif; }
 	border-color: hsla(0, 0%, 0%, 0.5);
     border-radius: 12px;
     padding: 12px;
-    margin: 4px;
+    margin: 0px;
 }
 
 .grid-item .message {
@@ -36,12 +36,12 @@ body { font-family: sans-serif; }
     text-align: center;
 }
 
-.grid-item--size0 { width: 128px; height: 128px; }
-.grid-item--size1 { width: 166px; height: 128px; }
-.grid-item--size2 { width: 166px; height: 215px;}
-.grid-item--size3 { width: 280px; height: 215px;}
+.grid-item--size0 { width: 120px; height: 120px; }
+.grid-item--size1 { width: 140px; height: 140px; }
+.grid-item--size2 { width: 160px; height: 160px;}
+.grid-item--size3 { width: 180px; height: 180px;}
 
-.grid-item--size4 { width: 280px; height: 473px; }
-.grid-item--size5 { width: 614px; height: 473px; }
-.grid-item--size6 { width: 614px; height: 798px; }
-.grid-item--size7 { width: 260px; height: 440px; }
+.grid-item--size4 { width: 200px; height: 200px; }
+.grid-item--size5 { width: 220px; height: 220px; }
+.grid-item--size6 { width: 240px; height: 240px; }
+.grid-item--size7 { width: 260px; height: 260px; }

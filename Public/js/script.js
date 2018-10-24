@@ -20,9 +20,10 @@ socket.addEventListener("message", ev => {
                 addNewCards(json);
                 break;
             case "downVote":
-            case "edit":
             case "upVote":
-                updateCards(json);
+                upDownVoteCards(json);
+                break;
+                case "edit":
                 break;
         }
 
@@ -36,8 +37,17 @@ function updateCards(json) {
         const elem = document.getElementById(card.id);
         const newElement = getCardElement(card);
         elem.replaceWith(newElement);
-        msnry.layout();
     });
+    msnry.layout();
+}
+
+function upDownVoteCards(json) {
+    json.cards.forEach(card => {
+        const elem = document.getElementById(card.id);
+        //elem.style = getStyle(card);
+        elem.className = getClassName(card);
+    });
+    msnry.layout();
 }
 
 function addNewCards(json) {
@@ -55,11 +65,20 @@ function addNewCards(json) {
 
 function getCardElement(card) {
     const elem = document.createElement('div');
-    elem.className = "grid-item";
-    elem.style = `height:${120 + card.voteCount * 20}px;`;
+    elem.className = getClassName(card);
+    //elem.style = getStyle(card);
     elem.id = card.id;
     elem.innerHTML = `<h3 class="message">${card.message}</h3>`;
     return elem;
+}
+
+function getClassName(card) {
+    return `grid-item grid-item--size${Math.min(7, card.voteCount)}`;
+}
+
+function getStyle(card) {
+    const size = 100 + card.voteCount * 20;
+    return `width: ${size}px; height:${size}px;`
 }
 
 function setupMasonry() {
@@ -78,6 +97,6 @@ function setupMasonry() {
     });
     return new Masonry(grid, {
         itemSelector: '.grid-item',
-        columnWidth: 168
+        columnWidth: 20
     });
 }
