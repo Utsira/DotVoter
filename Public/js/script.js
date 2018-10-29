@@ -2,6 +2,7 @@ let msnry;
 
 document.addEventListener("DOMContentLoaded", ev => {
     msnry = setupMasonry();
+    setupForm();
 });
 
 const socket = new WebSocket("ws://localhost:8080/dotVote");
@@ -73,7 +74,9 @@ function getCardElement(card) {
 }
 
 function getClassName(card) {
-    return `grid-item grid-item--size${Math.min(7, card.voteCount)}`;
+    const width = Math.min(5,  Math.floor((card.voteCount + 3) / 2));
+    const height = Math.min(5, Math.floor((card.voteCount + 2) / 2));
+    return `grid-item grid-item--width${width} grid-item--height${height}`;
 }
 
 function getStyle(card) {
@@ -97,6 +100,29 @@ function setupMasonry() {
     });
     return new Masonry(grid, {
         itemSelector: '.grid-item',
-        columnWidth: 20
+        columnWidth: 32,
+        gutter: 10,
+        originTop: false,
+        stagger: 30
+    });
+}
+
+function setupForm() {
+    const form = document.getElementById("newCard");
+    form.addEventListener("submit", ev => {
+        const message = ev.srcElement.elements.message.value;
+        ev.srcElement.elements.message.value = "";
+        ev.preventDefault();
+        if (message.trim() == "") {
+            return;
+        }
+        const payload = {
+            action: "new",
+            cards: [
+                { voteCount: 0, message: message, category: "" }
+            ]
+        };
+        socket.send(JSON.stringify(payload));
+        return;
     });
 }

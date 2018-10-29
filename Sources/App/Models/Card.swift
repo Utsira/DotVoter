@@ -8,12 +8,12 @@
 import Vapor
 
 struct PartialCard: Content, Equatable {
-	let id: UUID
+	let id: UUID?
 	var message: String
 	let category: String
 	let voteCount: Int
 
-	func complete(with author: String) -> Card {
+	func complete(with author: String, id: UUID) -> Card {
 		return Card(id: id, author: author, message: message, category: category, voteCount: voteCount)
 	}
 }

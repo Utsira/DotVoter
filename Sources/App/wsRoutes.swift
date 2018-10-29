@@ -43,9 +43,9 @@ public func wsRoutes(_ webSocketServer: NIOWebSocketServer) {
 
 func addTestCards(to room: Room) {
 	let cards = (0..<10).map { i in
-		PartialCard(id: UUID(), message: "test blah \(i)", category: "hi", voteCount: i)
+		PartialCard(id: nil, message: "test blah \(i)", category: "hi", voteCount: Int.random(in: 0..<6))
 	}
 	cards.forEach { card in
-		room.cardManager.cards.append(card.complete(with: UUID().uuidString))
+		room.cardManager.cards.append(card.complete(with: UUID().uuidString, id: UUID()))
 	}
 }

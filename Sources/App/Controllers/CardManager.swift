@@ -22,7 +22,7 @@ final class CardManager {
 		case .new:
 			newOrUpdatedCards = payload.cards.compactMap { partial in
 				guard !cards.contains(where: {$0.id == partial.id}) else { return nil }
-				let new = partial.complete(with: author)
+				let new = partial.complete(with: author, id: UUID())
 				cards.append(new)
 				return partial
 			}
