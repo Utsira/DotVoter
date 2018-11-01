@@ -30,12 +30,17 @@ public func wsRoutes(_ webSocketServer: NIOWebSocketServer) {
 			switch outcome {
 			case .success:
 				do {
-					try room.broadcast(updatedCards: room.cardManager.partials, toAllExcept: senderId)
+					try room.broadcast(updatedCards: room.cardManager.partials)
 				} catch {
 					ws.send(error.localizedDescription)
 				}
-			case .failure(let error):
-				ws.send(error.localizedDescription)
+			case .failure(let cardError):
+				do {
+					let errorEncoded = try encoder.encode(cardError)
+					ws.send(errorEncoded)
+				} catch {
+					ws.send(cardError.localizedDescription)
+				}
 			}
 		}
 	}

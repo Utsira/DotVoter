@@ -24,4 +24,11 @@ final class Room {
 			socket.send(data)
 		}
 	}
+	
+	func broadcast(updatedCards: [PartialCard]) throws {
+		let data = try encoder.encode(updatedCards)
+		connections.forEach { (id, socket) in
+			socket.send(data)
+		}
+	}
 }
