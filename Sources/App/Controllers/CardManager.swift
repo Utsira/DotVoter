@@ -9,46 +9,51 @@ import Foundation
 
 enum Result<T> {
 	case success(T)
-	case failure(String)
+	case failure(Error)
 }
 
 final class CardManager {
 	
-	var cards = SafeArray<Card>()
+	enum Error: Swift.Error {
+		case cardAlreadyExists, cardCouldNotBeFound, cardCannotBeDownVotedBelowZero, cardCanOnlyBeEditedByAuthor
+	}
 	
-	func handle(payload: Payload, author: String) -> Result<Payload> {
-		let newOrUpdatedCards: [PartialCard]
+	private let cards = SafeArray<Card>()
+	
+	var partials: [PartialCard] {
+		return cards.array.map { $0.partial }
+	}
+	
+	func handle(payload: Update, author: String) -> Result<Card> {
 		switch payload.action {
 		case .new:
-			newOrUpdatedCards = payload.cards.compactMap { partial in
-				guard !cards.contains(where: {$0.id == partial.id}) else { return nil }
-				let new = partial.complete(with: author, id: UUID())
-				cards.append(new)
-				return partial
-			}
+			guard !cards.contains(where: {$0.id == payload.card.id}) else { return .failure(Error.cardAlreadyExists) }
+			let new = payload.card.complete(with: author, id: UUID())
+			cards.append(new)
+			return .success(new)
 		case .upVote:
-			newOrUpdatedCards = payload.cards.compactMap { partial in
-				guard let card = cards.first(where: {$0.id == partial.id}) else { return nil }
+			guard let card = cards.first(where: {$0.id == payload.card.id}) else { return .failure(Error.cardCouldNotBeFound) }
 				card.voteCount += 1
-				return card.partial
-			}
+			return .success(card)
 		case .downVote:
-			newOrUpdatedCards = payload.cards.compactMap { partial in
-				guard let card = cards.first(where: {$0.id == partial.id}),
-					card.voteCount > 0
-					else { return nil }
-				card.voteCount -= 1
-				return card.partial
-			}
+			guard let card = cards.first(where: {$0.id == payload.card.id}) else { return .failure(Error.cardCouldNotBeFound) }
+			guard card.voteCount > 0 else { return .failure(Error.cardCannotBeDownVotedBelowZero)}
+			card.voteCount -= 1
+			return .success(card)
 		case .edit:
-			newOrUpdatedCards = payload.cards.compactMap { partial in
-				guard let card = cards.first(where: {$0.id == partial.id}),
-					card.author == author
-					else { return nil }
-				card.message = partial.message
-				return partial
-			}
+			guard let card = cards.first(where: {$0.id == payload.card.id}) else { return .failure(Error.cardCouldNotBeFound) }
+			guard card.author == author else { return .failure(Error.cardCanOnlyBeEditedByAuthor)}
+			card.message = payload.card.message
+			return .success(card)
 		}
-		return .success(Payload(action: payload.action, cards: newOrUpdatedCards))
+	}
+	
+	func addTestCards() {
+		let partials = (0..<10).map { i in
+			PartialCard(id: nil, message: "test blah \(i)", category: "hi", voteCount: Int.random(in: 0..<6))
+		}
+		partials.forEach { card in
+			cards.append(card.complete(with: UUID().uuidString, id: UUID()))
+		}
 	}
 }

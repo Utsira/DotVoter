@@ -11,14 +11,16 @@ import Vapor
 final class Room {
 	private var connections = SafeDictionary<String, WebSocket>()
 	let cardManager = CardManager()
+	private let encoder = JSONEncoder()
 	
 	func add(connection: WebSocket, sender: String) {
 		connections[sender] = connection
 	}
 	
-	func broadcast(data: Data) { //, toAllExcept sender: String
-		connections.forEach { (_, socket) in
-			//socket.send(text)
+	func broadcast(updatedCards: [PartialCard], toAllExcept sender: String) throws {
+		let data = try encoder.encode(updatedCards)
+		connections.forEach { (id, socket) in
+			guard sender != id else { return }
 			socket.send(data)
 		}
 	}
