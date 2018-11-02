@@ -7,6 +7,7 @@
 
 import Foundation
 import Vapor
+import Model
 
 final class Room {
 	private var connections = SafeDictionary<String, WebSocket>()

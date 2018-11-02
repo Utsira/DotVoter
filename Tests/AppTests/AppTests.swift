@@ -1,4 +1,5 @@
 @testable import App
+@testable import Model
 import Vapor
 import Crypto
 import XCTest
@@ -254,7 +255,7 @@ class RoutesTestCase: XCTestCase {
 		return didResponse(result, containCard: expectedCard, matchingOn: keypath)
 	}
 	
-	func didResponse(_ response: ResponseType, containError expectedError: CardManager.Error, file: StaticString = #file, line: UInt = #line) -> Bool {
+	func didResponse(_ response: ResponseType, containError expectedError: CardError, file: StaticString = #file, line: UInt = #line) -> Bool {
 		switch response {
 		case .success:
 			XCTFail("Unexpectedly succeeded", file: file, line: line)
@@ -268,7 +269,7 @@ class RoutesTestCase: XCTestCase {
 		}
 	}
 	
-	func didData(_ data: Data, containError expectedError: CardManager.Error, file: StaticString = #file, line: UInt = #line) -> Bool {
+	func didData(_ data: Data, containError expectedError: CardError, file: StaticString = #file, line: UInt = #line) -> Bool {
 		guard let result = try? decoder.decode(ResponseType.self, from: data) else {
 			XCTFail("Couldn't decipher data", file: file, line: line)
 			return false

@@ -6,6 +6,7 @@
 //
 
 import Vapor
+import Model
 
 public func wsRoutes(_ webSocketServer: NIOWebSocketServer) {
 	let room = Room()

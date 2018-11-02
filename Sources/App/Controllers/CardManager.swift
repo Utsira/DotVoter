@@ -6,13 +6,10 @@
 //
 
 import Foundation
+import Model
 
 final class CardManager {
-	
-	enum Error: String, Swift.Error, Codable {
-		case cardAlreadyExists, cardCouldNotBeFound, cardCannotBeDownVotedBelowOne, cardCanOnlyBeEditedByAuthor
-	}
-	
+
 	private let cards = SafeArray<Card>()
 	
 	var partials: [PartialCard] {
