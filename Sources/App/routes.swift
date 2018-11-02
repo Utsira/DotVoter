@@ -24,4 +24,9 @@ public func routes(_ router: Router) throws {
 		return promise.futureResult
 	}
 	
+	router.get("resetWithTests") { req -> HTTPResponseStatus in
+		Room.shared.cardManager.addTestCards()
+		return .ok
+	}
+	
 }

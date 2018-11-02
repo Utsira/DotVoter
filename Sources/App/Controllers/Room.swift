@@ -10,9 +10,13 @@ import Vapor
 import Model
 
 final class Room {
+	static let shared = Room()
+	
 	private var connections = SafeDictionary<String, WebSocket>()
 	let cardManager = CardManager()
 	private let encoder = JSONEncoder()
+	
+	private init() {}
 	
 	func add(connection: WebSocket, sender: String) {
 		connections[sender] = connection

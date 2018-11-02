@@ -8,8 +8,10 @@
 import Vapor
 import Model
 
+
+
 public func wsRoutes(_ webSocketServer: NIOWebSocketServer) {
-	let room = Room()
+	let room = Room.shared
 	room.cardManager.addTestCards()
 	let decoder = JSONDecoder()
 	let encoder = JSONEncoder()

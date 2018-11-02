@@ -8,21 +8,16 @@ import class Foundation.Bundle
 @available(OSX 10.13, *)
 class RoutesTestCase: XCTestCase {
 	
-	enum HTTPMethod: String {
-		case get = "GET"
-		case post = "POST"
-	}
+	//MARK: - Static
 	
-	private let process = Process()
-	let pipe = Pipe()
-	private let decoder = JSONDecoder()
-	private let encoder = JSONEncoder()
+	private static let process = Process()
+	private static let port = 5000
 	
-	override func setUp() {
+	override static func setUp() {
 		super.setUp()
 		let binary = productsDirectory.appendingPathComponent("Run")
 		process.executableURL = binary
-		process.standardOutput = pipe
+		process.arguments = ["--port", "\(port)"]
 		do {
 			try process.run()
 		} catch {
@@ -30,24 +25,14 @@ class RoutesTestCase: XCTestCase {
 		}
 	}
 	
-	override func tearDown() {
-		let expect = expectation(description: "wait for shutdown")
-		makeRequest("/shutdown", method: .get) { data, response in
-			guard let result = String(data: data, encoding: .utf8) else {
-				XCTFail("couldn't parse response")
-				return
-			}
-			XCTAssertEqual(result, "shut down")
-			expect.fulfill()
-		}
-		wait(for: [expect], timeout: 5)
+	override static func tearDown() {
 		process.terminate()
 		process.waitUntilExit()
 		super.tearDown()
 	}
 	
 	/// Returns path to the built products directory.
-	private var productsDirectory: URL {
+	private static var productsDirectory: URL {
 		#if os(macOS)
 		return Bundle(for: RoutesTestCase.self).bundleURL.deletingLastPathComponent()
 		#else
@@ -55,11 +40,33 @@ class RoutesTestCase: XCTestCase {
 		#endif
 	}
 	
-	func makeRequest(_ path: String, method: HTTPMethod, body: Data? = nil, headers: [String: String] = [:], completion: ((Data, HTTPURLResponse) throws -> Void)?) {
+	// MARK: - Instance
+	
+	enum HTTPMethod: String {
+		case get = "GET"
+		case post = "POST"
+	}
+	
+	private let decoder = JSONDecoder()
+	private let encoder = JSONEncoder()
+	
+	func resetServer() {
+		let expect = expectation(description: "wait for shutdown")
+		makeRequest("/resetWithTests", method: .get) { data, response in
+			guard 200..<300 ~= response.statusCode else {
+				return
+			}
+		
+			expect.fulfill()
+		}
+		wait(for: [expect], timeout: 5)
+	}
+
+	func makeRequest(_ path: String, method: HTTPMethod, body: Data? = nil, headers: [String: String] = [:], completion: ((Data?, HTTPURLResponse) throws -> Void)?) {
 		var components = URLComponents()
 		components.scheme = "http"
 		components.host = "localhost"
-		components.port = 8080
+		components.port = RoutesTestCase.port
 		components.path = path
 		guard let url = components.url else { return }
 		var request = URLRequest(url: url)
@@ -72,8 +79,8 @@ class RoutesTestCase: XCTestCase {
 				XCTFail(error.localizedDescription)
 				return
 			}
-			guard let data = data, let response = response as? HTTPURLResponse else {
-				XCTFail("No data")
+			guard let response = response as? HTTPURLResponse else {
+				XCTFail("No response")
 				return
 			}
 			do {
@@ -99,7 +106,7 @@ class RoutesTestCase: XCTestCase {
 //			"Connection": "Upgrade",
 //			"Upgrade": "websocket",
 //			"Host": "localhost",
-//			"Origin": "http://localhost:8080",
+//			"Origin": "http://localhost:\(RoutesTestCase.port)",
 //			"Sec-WebSocket-Key": myKey,
 //			"Sec-WebSocket-Version": "13"
 //		]
@@ -114,7 +121,7 @@ class RoutesTestCase: XCTestCase {
 	
 	func openSocket(file: StaticString = #file, line: UInt = #line) throws -> WebSocket {
 		let worker = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-		let socket = try HTTPClient.webSocket(scheme: .http, hostname: "localhost", port: 8080, path: "/dotVote", headers: .init(), maxFrameSize: 1 << 14, on: worker).wait()
+		let socket = try HTTPClient.webSocket(scheme: .http, hostname: "localhost", port: RoutesTestCase.port, path: "/dotVote", headers: .init(), maxFrameSize: 1 << 14, on: worker).wait()
 		let await = expectation(description: "will receive response from server")
 		socket.onBinary { socket, data in
 			guard let result = try? self.decoder.decode(ResponseType.self, from: data), case .success = result else {
@@ -141,19 +148,21 @@ class RoutesTestCase: XCTestCase {
 		let awaitError = expectation(description: "will receive error cannot add same card twice")
 		var updated = partial
 		socket.onBinary { socket, data in
+			print("^^^", String(data: data, encoding: .utf8)!)
 			guard let result = try? self.decoder.decode(ResponseType.self, from: data) else {
 				XCTFail("couldn't parse response", file: file, line: line)
 				return
 			}
-			if let match = self.didResponse(result, containCard: partial, matchingOn: \.message, file: file, line: line) {
+			if let match = self.didResponse(result, containCard: partial, matchingOn: \.message, shouldFailTest: false, file: file, line: line) {
 				updated = match
 				await.fulfill()
 				return
 			}
-			if self.didResponse(result, containError: .cardAlreadyExists) {
+			if self.didResponse(result, containError: .cardAlreadyExists, shouldFailTest: false) {
 				awaitError.fulfill()
 				return
 			}
+			XCTFail("dang", file: file, line: line)
 		}
 		let payload = Update(action: .new, card: partial)
 		send(payload: payload, socket: socket)
@@ -231,16 +240,20 @@ class RoutesTestCase: XCTestCase {
 	
 	// MARK: - Data parsing
 	
-	func didResponse<T: Equatable>(_ response: ResponseType, containCard expectedCard: PartialCard, matchingOn keypath: KeyPath<PartialCard, T>, file: StaticString = #file, line: UInt = #line) -> PartialCard? {
+	func didResponse<T: Equatable>(_ response: ResponseType, containCard expectedCard: PartialCard, matchingOn keypath: KeyPath<PartialCard, T>, shouldFailTest: Bool = true, file: StaticString = #file, line: UInt = #line) -> PartialCard? {
 		switch response {
 		case .failure(let error):
-			XCTFail(error.localizedDescription, file: file, line: line)
+			if shouldFailTest {
+				XCTFail(error.localizedDescription, file: file, line: line)
+			}
 			return nil
 		case .success(let cards):
 			
 			guard let match = cards.first(where: { card in
 				return card[keyPath: keypath] == expectedCard[keyPath: keypath]}) else {
-				XCTFail("Card  not found", file: file, line: line)
+					if shouldFailTest {
+						XCTFail("Card  not found", file: file, line: line)
+					}
 				return nil
 			}
 			return match
@@ -255,14 +268,18 @@ class RoutesTestCase: XCTestCase {
 		return didResponse(result, containCard: expectedCard, matchingOn: keypath)
 	}
 	
-	func didResponse(_ response: ResponseType, containError expectedError: CardError, file: StaticString = #file, line: UInt = #line) -> Bool {
+	func didResponse(_ response: ResponseType, containError expectedError: CardError, shouldFailTest: Bool = true, file: StaticString = #file, line: UInt = #line) -> Bool {
 		switch response {
 		case .success:
-			XCTFail("Unexpectedly succeeded", file: file, line: line)
+			if shouldFailTest {
+				XCTFail("Unexpectedly succeeded", file: file, line: line)
+			}
 			return false
 		case .failure(let error):
 			guard error == expectedError else {
-				XCTFail("Wrong error received: \(error.localizedDescription)", file: file, line: line)
+				if shouldFailTest {
+					XCTFail("Wrong error received: \(error.localizedDescription)", file: file, line: line)
+				}
 				return false
 			}
 			return true
@@ -297,6 +314,7 @@ class RoutesTestCase: XCTestCase {
 		socket.send("hiya")
 		wait(for: [await], timeout: 5)
 		socket.close()
+		resetServer()
 	}
 	
 	func testNewCard() throws {
@@ -304,6 +322,7 @@ class RoutesTestCase: XCTestCase {
 		let partial = PartialCard(id: UUID(), message: "new card", category: "default", voteCount: 0)
 		try addNewCard(partial, socket: socket)
 		socket.close()
+		resetServer()
 	}
 	
 	func testUpVoteCard() throws {
@@ -312,6 +331,7 @@ class RoutesTestCase: XCTestCase {
 		partial = try addNewCard(partial, socket: socket)
 		try upvoteCard(partial, socket: socket)
 		socket.close()
+		resetServer()
 	}
 	
 	func testEditCard() throws {
@@ -320,6 +340,7 @@ class RoutesTestCase: XCTestCase {
 		partial = try addNewCard(partial, socket: socket)
 		try editCard(partial, socket: socket)
 		socket.close()
+		resetServer()
 	}
 	
 	func testCannotAddSameCardTwice() throws {
@@ -327,6 +348,7 @@ class RoutesTestCase: XCTestCase {
 		let partial = PartialCard(id: UUID(), message: "Cannot add same card twice", category: "default", voteCount: 0)
 		try readdNewCard(partial, socket: socket)
 		socket.close()
+		resetServer()
 	}
 	
 	func testCannotUpvoteNonExistentCard() throws {
@@ -341,6 +363,8 @@ class RoutesTestCase: XCTestCase {
 		}
 		send(payload: payload, socket: socket)
 		wait(for: [await], timeout: 5)
+		socket.close()
+		resetServer()
 	}
 	
 	func testCannotDownvoteCardAtZeroVotes() throws {
@@ -361,6 +385,7 @@ class RoutesTestCase: XCTestCase {
 		wait(for: [await], timeout: 5)
 		
 		socket.close()
+		resetServer()
 	}
 }
 
