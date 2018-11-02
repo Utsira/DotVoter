@@ -17,7 +17,7 @@ public func wsRoutes(_ webSocketServer: NIOWebSocketServer) {
 		let senderId = req.http.remotePeer.description
 		room.add(connection: socket, sender: senderId)
 		
-		let payload = room.cardManager.partials
+		let payload: ResponseType = .success(room.cardManager.partials)
 		let data = try encoder.encode(payload)
 		socket.send(data)
 		
@@ -30,13 +30,13 @@ public func wsRoutes(_ webSocketServer: NIOWebSocketServer) {
 			switch outcome {
 			case .success:
 				do {
-					try room.broadcast(updatedCards: room.cardManager.partials)
+					try room.broadcast(updatedCards: outcome)
 				} catch {
 					ws.send(error.localizedDescription)
 				}
 			case .failure(let cardError):
 				do {
-					let errorEncoded = try encoder.encode(cardError)
+					let errorEncoded = try encoder.encode(outcome)
 					ws.send(errorEncoded)
 				} catch {
 					ws.send(cardError.localizedDescription)

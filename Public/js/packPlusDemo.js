@@ -1,84 +1,3 @@
-// const dataset = [{
-//     "message": "synthesize value-added action-items",
-//     "voteCount": 9,
-//     "category": "glad"
-//   }, {
-//     "message": "harness scalable deliverables",
-//     "voteCount": 4,
-//     "category": "glad"
-//   }, {
-//     "message": "embrace innovative e-tailers",
-//     "voteCount": 8,
-//     "category": "glad"
-//   }, {
-//     "message": "incubate ubiquitous synergies",
-//     "voteCount": 5,
-//     "category": "glad"
-//   }, {
-//     "message": "iterate bricks-and-clicks mindshare",
-//     "voteCount": 7,
-//     "category": "glad"
-//   }, {
-//     "message": "drive cross-platform e-services",
-//     "voteCount": 2,
-//     "category": "glad"
-//   }, {
-//     "message": "engage bricks-and-clicks e-commerce",
-//     "voteCount": 6,
-//     "category": "mad"
-//   }, {
-//     "message": "generate seamless eyeballs",
-//     "voteCount": 2,
-//     "category": "glad"
-//   }, {
-//     "message": "visualize clicks-and-mortar web-readiness",
-//     "voteCount": 7,
-//     "category": "mad"
-//   }, {
-//     "message": "reintermediate seamless functionalities",
-//     "voteCount": 7,
-//     "category": "sad"
-//   }, {
-//     "message": "grow value-added e-tailers",
-//     "voteCount": 5,
-//     "category": "sad"
-//   }, {
-//     "message": "optimize virtual interfaces",
-//     "voteCount": 2,
-//     "category": "sad"
-//   }, {
-//     "message": "implement B2B mindshare",
-//     "voteCount": 5,
-//     "category": "glad"
-//   }, {
-//     "message": "synergize e-business action-items",
-//     "voteCount": 6,
-//     "category": "mad"
-//   }, {
-//     "message": "integrate global e-tailers",
-//     "voteCount": 6,
-//     "category": "glad"
-//   }, {
-//     "message": "maximize cross-platform e-tailers",
-//     "voteCount": 4,
-//     "category": "glad"
-//   }, {
-//     "message": "recontextualize sticky deliverables",
-//     "voteCount": 5,
-//     "category": "sad"
-//   }, {
-//     "message": "reinvent revolutionary metrics",
-//     "voteCount": 4,
-//     "category": "glad"
-//   }, {
-//     "message": "maximize dot-com e-services",
-//     "voteCount": 7,
-//     "category": "glad"
-//   }, {
-//     "message": "seize open-source web services",
-//     "voteCount": 6,
-//     "category": "mad"
-//   }];
 /*
 (point) => {
     return 1 + point.voteCount;
@@ -95,11 +14,11 @@ function setupViz(dataset) {
     .id(["category", "id"])
     .depth(1)
     .size("voteCount")
-  //  .size({"value": "VoteCount"})//, "scale": {"min": 1}})
-    .text({"category": "category","id": "message"})
+    //  .size({"value": "VoteCount"})//, "scale": {"min": 1}})
+    .text({ "category": "category", "id": "message" })
     .color("message")
     // .width(window.innerWidth)
-     .legend(false)
+    .legend(false)
     .mouse({
       "click": (point, viz) => {
         upVote(point.id);
@@ -119,7 +38,7 @@ function upVote(id) {
 function newCard(message) {
   const payload = {
     action: "new",
-    card: { voteCount: 0, message: message, category: "" }
+    card: { voteCount: 1, message: message, category: "glad" }
   };
   socket.send(JSON.stringify(payload));
 }
@@ -150,11 +69,19 @@ socket.addEventListener("message", ev => {
   reader.addEventListener("loadend", (ev) => {
     const text = ev.srcElement.result;
     const json = JSON.parse(text);
-    if (visualization == null) {
-      setupViz(json);
-    } else {
-      visualization.data(json)
-        .draw();
+    const dataset = json["success"];
+    const error = json["failure"];
+    if (error != null) {
+      alert(error);
+      return;
+    }
+    if (dataset != null) {
+      if (visualization == null) {
+        setupViz(dataset);
+      } else {
+        visualization.data(dataset)
+          .draw();
+      }
     }
   });
   reader.readAsText(ev.data);

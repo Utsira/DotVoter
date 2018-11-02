@@ -7,13 +7,6 @@
 
 import Foundation
 
-typealias CodableError = Error & Codable
-
-enum Result<T, E: Error> {
-	case success(T)
-	case failure(E)
-}
-
 final class CardManager {
 	
 	enum Error: String, Swift.Error, Codable {
@@ -26,28 +19,25 @@ final class CardManager {
 		return cards.array.map { $0.partial }
 	}
 	
-	func handle(payload: Update, author: String) -> Result<Card, Error> {
+	func handle(payload: Update, author: String) -> ResponseType {
 		switch payload.action {
 		case .new:
-			guard !cards.contains(where: {$0.id == payload.card.id}) else { return .failure(Error.cardAlreadyExists) }
+			guard !cards.contains(where: {$0.id == payload.card.id}) else { return .failure(.cardAlreadyExists) }
 			let new = payload.card.complete(with: author, id: UUID())
 			cards.append(new)
-			return .success(new)
 		case .upVote:
-			guard let card = cards.first(where: {$0.id == payload.card.id}) else { return .failure(Error.cardCouldNotBeFound) }
+			guard let card = cards.first(where: {$0.id == payload.card.id}) else { return .failure(.cardCouldNotBeFound) }
 				card.voteCount += 1
-			return .success(card)
 		case .downVote:
-			guard let card = cards.first(where: {$0.id == payload.card.id}) else { return .failure(Error.cardCouldNotBeFound) }
-			guard card.voteCount > 1 else { return .failure(Error.cardCannotBeDownVotedBelowOne)}
+			guard let card = cards.first(where: {$0.id == payload.card.id}) else { return .failure(.cardCouldNotBeFound) }
+			guard card.voteCount > 1 else { return .failure(.cardCannotBeDownVotedBelowOne)}
 			card.voteCount -= 1
-			return .success(card)
 		case .edit:
-			guard let card = cards.first(where: {$0.id == payload.card.id}) else { return .failure(Error.cardCouldNotBeFound) }
-			guard card.author == author else { return .failure(Error.cardCanOnlyBeEditedByAuthor)}
+			guard let card = cards.first(where: {$0.id == payload.card.id}) else { return .failure(.cardCouldNotBeFound) }
+			guard card.author == author else { return .failure(.cardCanOnlyBeEditedByAuthor)}
 			card.message = payload.card.message
-			return .success(card)
 		}
+		return .success(partials)
 	}
 	
 	func addTestCards() {
@@ -65,6 +55,7 @@ final class CardManager {
 //		let partials = (0..<10).map { i in
 //			PartialCard(id: nil, message: "test blah \(i)", category: ["mad", "sad", "glad"].randomElement() ?? "", voteCount: Int.random(in: 0..<6))
 //		}
+		cards.removeAll()
 		partials.forEach { card in
 			cards.append(card.complete(with: UUID().uuidString, id: UUID()))
 		}

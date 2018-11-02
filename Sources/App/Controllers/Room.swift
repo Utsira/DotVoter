@@ -17,7 +17,7 @@ final class Room {
 		connections[sender] = connection
 	}
 	
-	func broadcast(updatedCards: [PartialCard], toAllExcept sender: String) throws {
+	func broadcast(updatedCards: ResponseType, toAllExcept sender: String) throws {
 		let data = try encoder.encode(updatedCards)
 		connections.forEach { (id, socket) in
 			guard sender != id else { return }
@@ -25,7 +25,7 @@ final class Room {
 		}
 	}
 	
-	func broadcast(updatedCards: [PartialCard]) throws {
+	func broadcast(updatedCards: ResponseType) throws {
 		let data = try encoder.encode(updatedCards)
 		connections.forEach { (id, socket) in
 			socket.send(data)

@@ -36,6 +36,12 @@ final class SafeArray<T>: ExpressibleByArrayLiteral {
 		}
 	}
 	
+	func removeAll() {
+		queue.sync(flags: .barrier) {
+			cache.removeAll()
+		}
+	}
+	
 	func contains (where predicate: (T) throws -> Bool) rethrows -> Bool {
 		return try queue.sync {
 			try cache.contains(where: predicate)
