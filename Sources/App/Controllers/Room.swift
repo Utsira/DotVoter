@@ -22,6 +22,13 @@ final class Room {
 		connections[sender] = connection
 	}
 	
+	func sender(for socket: WebSocket) -> String? {
+		return connections.first(where: {
+			let (_, value) = $0
+			return value === socket
+		})?.key
+	}
+	
 	func broadcast(updatedCards: ResponseType, toAllExcept sender: String) throws {
 		let data = try encoder.encode(updatedCards)
 		connections.forEach { (id, socket) in

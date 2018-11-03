@@ -36,6 +36,12 @@ final class SafeDictionary<Key: Hashable, Value>: ExpressibleByDictionaryLiteral
 		}
 	}
 	
+	func first(where predicate: ((key: Key, value: Value)) throws -> Bool) rethrows -> (key: Key, value: Value)? {
+		return try queue.sync {
+			return try cache.first(where: predicate)
+		}
+	}
+	
 	func merge(other: [Key : Value], uniquingKeysWith disambiguator: (Value, Value) throws -> Value = { a, b in b }) rethrows {
 		try queue.sync(flags: .barrier) {
 			try cache.merge(other, uniquingKeysWith: disambiguator)
