@@ -1,6 +1,4 @@
-.git
-.build
-DerivedData
-Package.resolved
-*.xcodeproj
-
+*
+!Sources
+!Package.swift
+!pkg-swift-deps.sh

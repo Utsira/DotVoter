@@ -10,6 +10,17 @@ class RoutesTestCase: XCTestCase {
 	
 	//MARK: - Static
 	
+	static var allTests = [
+		("testResultSuccess", testResultSuccess),
+		("testWsOnText", testWsOnText),
+		("testNewCard", testNewCard),
+		("testUpVoteCard", testUpVoteCard),
+		("testEditCard", testEditCard),
+		("testCannotAddSameCardTwice", testCannotAddSameCardTwice),
+		("testCannotUpvoteNonExistentCard", testCannotUpvoteNonExistentCard),
+		("testCannotDownvoteCardAtZeroVotes", testCannotDownvoteCardAtZeroVotes),
+		]
+	
 	private static let process = Process()
 	private static let port = 5000
 	
