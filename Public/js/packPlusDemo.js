@@ -62,7 +62,9 @@ window.addEventListener('resize', () => {
     .draw()
 });
 
-const socket = new WebSocket("ws://localhost:8080/dotVote");
+const protocol = window.location.protocol.replace("http", "ws");
+const endpoint = `${ protocol }//${ window.location.hostname }:8080/dotVote`;
+const socket = new WebSocket(endpoint);
 
 socket.addEventListener("message", ev => {
   const reader = new FileReader();

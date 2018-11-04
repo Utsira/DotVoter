@@ -10,6 +10,8 @@ FROM busybox:glibc
 WORKDIR /app
 COPY --from=builder /build/swift_libs.tar.gz .
 COPY --from=builder /build/.build/x86_64-unknown-linux/release/Run .
+COPY Resources/ ./Resources/
+COPY Public/ ./Public/
 
 RUN tar -xzvf swift_libs.tar.gz -C /
 RUN rm -rf usr/lib lib lib64 swift_libs.tar.gz
