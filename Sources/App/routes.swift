@@ -12,14 +12,14 @@ public func routes(_ router: Router) throws {
         return "Hello, world!"
     }
 
-	router.get("shutdown") { req -> Future<String> in
-		let promise = req.eventLoop.newPromise(String.self)
+	router.get("shutdown") { req -> Future<HTTPResponseStatus> in
+		let promise = req.eventLoop.newPromise(HTTPResponseStatus.self)
 		shutdown { error in
 			if let error = error {
 				promise.fail(error: error)
 				return
 			}
-			promise.succeed(result: "shut down")
+			promise.succeed(result: .ok)
 		}
 		return promise.futureResult
 	}
