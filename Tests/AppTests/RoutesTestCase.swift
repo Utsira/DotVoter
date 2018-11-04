@@ -63,21 +63,31 @@ class RoutesTestCase: XCTestCase {
 	
 	func resetServer() {
 		let expect = expectation(description: "wait for shutdown")
-		makeRequest("/resetWithTests", method: .get) { data, response in
-			guard 200..<300 ~= response.statusCode else {
-				return
+		RoutesTestCase.makeRequest("/resetWithTests", method: .get) { result in
+			switch result {
+			case .success(_, let response) where 200..<300 ~= response.statusCode:
+				expect.fulfill()
+			case .failure(let error):
+				XCTFail(error.localizedDescription)
+			default:
+				XCTFail("bad request")
 			}
-		
-			expect.fulfill()
 		}
 		wait(for: [expect], timeout: 5)
 	}
 
-	func makeRequest(_ path: String, method: HTTPMethod, body: Data? = nil, headers: [String: String] = [:], completion: ((Data?, HTTPURLResponse) throws -> Void)?) {
+	
+	enum Result<T> {
+		case success(T), failure(Error)
+	}
+	
+	struct noResponseError: Error {}
+	
+	static func makeRequest(_ path: String, method: HTTPMethod, body: Data? = nil, headers: [String: String] = [:], completion: ((Result<(Data?, HTTPURLResponse)>) -> Void)? = nil) {
 		var components = URLComponents()
 		components.scheme = "http"
 		components.host = "localhost"
-		components.port = RoutesTestCase.port
+		components.port = port
 		components.path = path
 		guard let url = components.url else { return }
 		var request = URLRequest(url: url)
@@ -87,18 +97,15 @@ class RoutesTestCase: XCTestCase {
 		let task = URLSession.shared.dataTask(with: request) { data, response, error
 			in
 			if let error = error {
-				XCTFail(error.localizedDescription)
+				completion?(.failure(error))
 				return
 			}
 			guard let response = response as? HTTPURLResponse else {
-				XCTFail("No response")
+				completion?(.failure(noResponseError()))
 				return
 			}
-			do {
-				try completion?(data, response)
-			} catch {
-				XCTFail(error.localizedDescription)
-			}
+			completion?(.success((data, response)))
+			
 		}
 		task.resume()
 	}
@@ -148,8 +155,8 @@ class RoutesTestCase: XCTestCase {
 	func send(payload: Update, socket: WebSocket, file: StaticString = #file, line: UInt = #line) {
 		guard let data = try? encoder.encode(payload),
 			let string = String(data: data, encoding: .utf8) else {
-			XCTFail("Couldn't parse payload", file: file, line: line)
-			return
+				XCTFail("Couldn't parse payload", file: file, line: line)
+				return
 		}
 		socket.send(string)
 	}
@@ -265,7 +272,7 @@ class RoutesTestCase: XCTestCase {
 					if shouldFailTest {
 						XCTFail("Card  not found", file: file, line: line)
 					}
-				return nil
+					return nil
 			}
 			return match
 		}
