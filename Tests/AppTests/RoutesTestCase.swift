@@ -11,6 +11,7 @@ class RoutesTestCase: XCTestCase {
 	
 	private static let process = Process()
 	private static let port = 5000
+	private static let host = "localhost"//"127.0.0.1"//"docker.for.mac.localhost"
 	
 	override static func setUp() {
 		super.setUp()
@@ -22,7 +23,7 @@ class RoutesTestCase: XCTestCase {
 		} else {
 			process.launchPath = binary.path
 		}
-		process.arguments = ["--port", "\(port)"]
+		process.arguments = ["serve", "-b", host, "--port", "\(port)"]
 		do {
 			if #available(OSX 10.13, *) {
 				#if os(macOS)
@@ -92,7 +93,7 @@ class RoutesTestCase: XCTestCase {
 	static func makeRequest(_ path: String, method: HTTPMethod, body: Data? = nil, headers: [String: String] = [:], completion: ((Result<(Data?, HTTPURLResponse)>) -> Void)? = nil) {
 		var components = URLComponents()
 		components.scheme = "http"
-		components.host = "localhost"
+		components.host = host
 		components.port = port
 		components.path = path
 		guard let url = components.url else { return }
@@ -145,7 +146,7 @@ class RoutesTestCase: XCTestCase {
 	
 	func openSocket(file: StaticString = #file, line: UInt = #line) throws -> WebSocket {
 		let worker = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-		let socket = try HTTPClient.webSocket(scheme: .http, hostname: "localhost", port: RoutesTestCase.port, path: "/dotVote", headers: .init(), maxFrameSize: 1 << 14, on: worker).wait()
+		let socket = try HTTPClient.webSocket(scheme: .http, hostname: RoutesTestCase.host, port: RoutesTestCase.port, path: "/dotVote", headers: .init(), maxFrameSize: 1 << 14, on: worker).wait()
 		let await = TestExpectation(description: "will receive response from server")
 		
 		socket.onBinary { socket, data in
