@@ -8,11 +8,26 @@
 import Vapor
 import App
 
-final class MockWebSocket: WebSocketType {
+final class MockWebSocket {
 	
 	private var onTextCallback: (WebSocketType, String) -> () = { _, _ in }
-	var clientHandlesBinary: (Data) -> Void = {_ in }
 	
+	// MARK: - Client-side (Tests use these to test the server)
+	
+	var clientHandlesBinary: (Data) -> Void = {_ in }
+	var clientHandlesText: (String) -> Void = {_ in }
+	
+	func clientSendsText(_ text: String) {
+		onTextCallback(self, text)
+	}
+	
+	func clientSendsEncodable<T: Encodable>(_ encodable: T) throws {
+		let data = try JSONEncoder().encode(encodable)
+		clientSendsText(String(data: data, encoding: .utf8)!)
+	}
+}
+
+extension MockWebSocket: WebSocketType {
 	func onText(_ callback: @escaping (WebSocketType, String) -> ()) {
 		onTextCallback = callback
 	}
@@ -22,14 +37,6 @@ final class MockWebSocket: WebSocketType {
 	}
 	
 	func send<S>(_ text: S, promise: EventLoopPromise<Void>?) where S : Collection, S.Element == Character {
-	}
-	
-	func clientSendsText(_ text: String) {
-		onTextCallback(self, text)
-	}
-	
-	func clientSendsEncodable<T: Encodable>(_ encodable: T) throws {
-		let data = try JSONEncoder().encode(encodable)
-		clientSendsText(String(data: data, encoding: .utf8)!)
+		clientHandlesText(text as! String)
 	}
 }
