@@ -2,6 +2,7 @@ FROM swift:4.1 as builder
 WORKDIR /build
 COPY . .
 RUN swift package resolve
+RUN swift test
 RUN swift build -c release
 RUN chmod +x pkg-swift-deps.sh
 RUN ./pkg-swift-deps.sh /build/.build/x86_64-unknown-linux/release/Run

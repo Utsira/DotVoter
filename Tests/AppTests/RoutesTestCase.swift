@@ -11,8 +11,12 @@ class RoutesTestCase: XCTestCase {
 		case success(T), failure(Error)
 	}
 	
-	struct NoResponseError: Error {
+	struct NoResponseError: CustomStringConvertible, Error {
 		let action: Update.Action
+		
+		var description: String {
+			return "No response for action: \(action)"
+		}
 	}
 	
 	private let decoder = JSONDecoder()
