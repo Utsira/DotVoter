@@ -156,6 +156,7 @@ class RoutesTestCase: XCTestCase {
 			}
 			await.fulfill()
 		}
+		print("Opening socket")
 		await.wait(timeout: 5)
 		return socket
 	}
@@ -411,6 +412,22 @@ class RoutesTestCase: XCTestCase {
 		await.wait(timeout: 5)
 		socket.close()
 		resetServer()
+	}
+	
+	func testNIOWSS() throws {
+		let socket = MockWebSocket()
+		let id = "foo"
+		try SocketController.openConnection(socket: socket, senderId: id)
+		let partial = PartialCard(id: UUID(), message: "new card", category: "default", voteCount: 0)
+		let await = TestExpectation(description: "will receive response from server")
+		socket.clientHandlesBinary = { data in
+			guard let match = self.didData(data, containCard: partial, matchingOn: \.message) else { return }
+			await.fulfill()
+		}
+		
+		let payload = Update(action: .new, card: partial)
+		try socket.clientSendsEncodable(payload)
+		await.wait(timeout: 5)
 	}
 }
 
