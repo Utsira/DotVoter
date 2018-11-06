@@ -24,7 +24,7 @@ class RoutesTestCase: XCTestCase {
 	
 	override func setUp() {
 		super.setUp()
-		Room.shared.cardManager.addTestCards()
+		Room.shared.cardManager.resetAndAddTestCards()
 	}
 	
 	func newSocket() throws -> MockWebSocket {
