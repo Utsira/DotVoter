@@ -28,4 +28,6 @@ There is no database. The tickets will persist on the server only as long as the
 
 For the purpose of this PoC, the backend also serves the frontend. Note though that the frontend could be a totally separate deployment.
 
+This repo uses Now's GitHub integration to continuously run tests and deploy. Click the Now link on any commit to see the live app for that commit.
+
 The Dockerfile comes from the [Now examples repository](https://github.com/zeit/now-examples). See the post [A Minimal Swift Docker Image](https://medium.com/@jjacobson/a-minimal-swift-docker-image-b93d2bc1ce3c) for more details on how the Dockerfile works.
