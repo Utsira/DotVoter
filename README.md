@@ -6,7 +6,7 @@
         <img src="http://img.shields.io/badge/swift-4.1-brightgreen.svg" alt="Swift 4.1">
     </a>
     <a href="https://circleci.com/gh/Utsira/DotVoter">
-        <img src="https://circleci.com/gh/Utsira/DotVoter.svg?style=svg" alt="Continuous Integration">
+        <img src="https://circleci.com/gh/Utsira/DotVoter.svg?style=shield" alt="Continuous Integration">
     </a>
 </p>
 
