@@ -9,7 +9,6 @@ extension RoutesTestCase {
         ("testNewCard", testNewCard),
         ("testResultSuccess", testResultSuccess),
         ("testUpVoteCard", testUpVoteCard),
-        ("testWsOnText", testWsOnText),
     ]
 }
 

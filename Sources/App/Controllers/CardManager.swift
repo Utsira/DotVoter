@@ -37,7 +37,12 @@ final class CardManager {
 		return .success(partials)
 	}
 	
-	func addTestCards() {
+	func reset() {
+		cards.removeAll()
+	}
+	
+	func resetAndAddTestCards() {
+		reset()
 		let partials = [
 			PartialCard(id: nil, message: "I miss the sofas in Bader", category: "sad", voteCount: 1),
 			PartialCard(id: nil, message: "iOS social is coming up", category: "glad", voteCount: 2),
@@ -49,10 +54,6 @@ final class CardManager {
 			PartialCard(id: nil, message: "My UITests passed on 3rd retry", category: "glad", voteCount: 1),
 			PartialCard(id: nil, message: "It's 2018 and there're still no hoverboards", category: "mad", voteCount: 1)
 		]
-//		let partials = (0..<10).map { i in
-//			PartialCard(id: nil, message: "test blah \(i)", category: ["mad", "sad", "glad"].randomElement() ?? "", voteCount: Int.random(in: 0..<6))
-//		}
-		cards.removeAll()
 		partials.forEach { card in
 			cards.append(card.complete(with: UUID().uuidString, id: UUID()))
 		}

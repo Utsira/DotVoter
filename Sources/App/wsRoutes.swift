@@ -9,6 +9,6 @@ import Vapor
 
 public func wsRoutes(_ webSocketServer: NIOWebSocketServer) {
 	let room = Room.shared
-	room.cardManager.addTestCards()
+	room.cardManager.resetAndAddTestCards()
 	webSocketServer.get("dotVote", use: SocketController.openConnection)
 }
