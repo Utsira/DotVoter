@@ -1,8 +1,3 @@
-/*
-(point) => {
-    return 1 + point.voteCount;
-  }
-*/
 
 let visualization;
 
@@ -13,7 +8,9 @@ function setupViz(dataset) {
     .type("bubbles")
     .id(["category", "id"])
     .depth(1)
-    .size("voteCount")
+    .size((point) => {
+      return Math.random() + point.voteCount * 2;
+    })
     //  .size({"value": "VoteCount"})//, "scale": {"min": 1}})
     .text({ "category": "category", "id": "message" })
     .color("message")
