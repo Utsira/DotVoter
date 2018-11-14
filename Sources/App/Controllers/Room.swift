@@ -38,4 +38,12 @@ class Room<T: Encodable> {
 			socket.send(data, promise: nil)
 		}
 	}
+	
+	func onConnection(socket: WebSocketType) throws {
+		assertionFailure("Override this method")
+	}
+	
+	func onText(socket: WebSocketType, text: String, senderId: String) {
+		assertionFailure("Override this method")
+	}
 }
