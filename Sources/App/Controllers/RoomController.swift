@@ -9,19 +9,12 @@ import Foundation
 import Vapor
 import Model
 
-final class RoomController {
-	
-	static let shared = RoomController()
-	
-	private let encoder = JSONEncoder()
-	
-	let rooms = SafeDictionary<String, DotVoteRoom>()
-	
-	private init() {
-		let demoRoom = DotVoteRoom()
-		demoRoom.resetAndAddTestCards()
-		rooms["autumn-event"] = demoRoom
-	}
+protocol RoomController {
+	associatedtype R: Room
+	var rooms: SafeDictionary<String, R> { get }
+}
+
+extension RoomController {
 	
 	func openConnection(socket: WebSocketType, request: Request) throws {
 		let senderId = request.http.remotePeer.description
@@ -38,11 +31,11 @@ final class RoomController {
 		}
 	}
 	
-	private func getOrCreateRoom(for id: String) -> DotVoteRoom {
+	func getOrCreateRoom(for id: String) -> R {
 		if let room = rooms[id] {
 			return room
 		}
-		let room = DotVoteRoom()
+		let room = R()
 		rooms[id] = room
 		return room
 	}

@@ -25,12 +25,12 @@ class RoutesTestCase: XCTestCase {
 	
 	override func setUp() {
 		super.setUp()
-		RoomController.shared.rooms[roomId]?.resetAndAddTestCards()
+		(DotVoteRoomController.shared.rooms[roomId] as? DotVoteRoom)?.resetAndAddTestCards()
 	}
 	
 	func newSocket(roomId: String = "test") throws -> MockWebSocket {
 		let socket = MockWebSocket()
-		try RoomController.shared.openConnection(socket: socket, roomId: roomId, senderId: UUID().uuidString)
+		try DotVoteRoomController.shared.openConnection(socket: socket, roomId: roomId, senderId: UUID().uuidString)
 		return socket
 	}
 	

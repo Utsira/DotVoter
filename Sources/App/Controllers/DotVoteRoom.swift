@@ -8,13 +8,15 @@
 import Foundation
 import Model
 
-final class DotVoteRoom: Room<ResponseType> {
+final class DotVoteRoom: Room {
+	typealias T = ResponseType
+	var connections = SafeDictionary<String, WebSocketType>()
+	let encoder = JSONEncoder()
 	
-	private let cardManager = CardManager()
-	private let encoder = JSONEncoder()
 	private let decoder = JSONDecoder()
+	private let cardManager = CardManager()
 	
-	override func onText(socket: WebSocketType, text: String, senderId: String) {
+	func onText(socket: WebSocketType, text: String, senderId: String) {
 		guard let data = text.data(using: .utf8),
 			let payload = try? decoder.decode(Update.self, from: data)
 			else {
@@ -31,7 +33,7 @@ final class DotVoteRoom: Room<ResponseType> {
 		}
 	}
 	
-	override func onConnection(socket: WebSocketType) throws {
+	func onConnection(socket: WebSocketType) throws {
 		let payload: ResponseType = .success(cardManager.partials)
 		let data = try encoder.encode(payload)
 		socket.send(data, promise: nil)
@@ -40,7 +42,7 @@ final class DotVoteRoom: Room<ResponseType> {
 	private func handleOutcome(_ outcome: ResponseType, socket: WebSocketType) throws {
 		switch outcome {
 		case .success:
-			try broadcast(updatedCards: outcome)
+			try broadcast(payload: outcome)
 		case .failure:
 			let errorEncoded = try encoder.encode(outcome)
 			socket.send(errorEncoded, promise: nil)

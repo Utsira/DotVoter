@@ -8,10 +8,18 @@
 import Foundation
 import Vapor
 
-class Room<T: Encodable> {
+protocol Room {
+	associatedtype T: Encodable
 	
-	private var connections = SafeDictionary<String, WebSocketType>()
-	private let encoder = JSONEncoder()
+	var connections: SafeDictionary<String, WebSocketType> { get }
+	var encoder: JSONEncoder { get }
+	
+	init()
+	func onConnection(socket: WebSocketType) throws
+	func onText(socket: WebSocketType, text: String, senderId: String)
+}
+
+extension Room {
 	
 	func add(connection: WebSocketType, sender: String) {
 		connections[sender] = connection
@@ -24,26 +32,18 @@ class Room<T: Encodable> {
 		})?.key
 	}
 	
-	func broadcast(updatedCards: T, toAllExcept sender: String) throws {
-		let data = try encoder.encode(updatedCards)
+	func broadcast(payload: T, toAllExcept sender: String) throws {
+		let data = try encoder.encode(payload)
 		connections.forEach { (id, socket) in
 			guard sender != id else { return }
 			socket.send(data, promise: nil)
 		}
 	}
 	
-	func broadcast(updatedCards: T) throws {
-		let data = try encoder.encode(updatedCards)
+	func broadcast(payload: T) throws {
+		let data = try encoder.encode(payload)
 		connections.forEach { (id, socket) in
 			socket.send(data, promise: nil)
 		}
-	}
-	
-	func onConnection(socket: WebSocketType) throws {
-		assertionFailure("Override this method")
-	}
-	
-	func onText(socket: WebSocketType, text: String, senderId: String) {
-		assertionFailure("Override this method")
 	}
 }
