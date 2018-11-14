@@ -60,7 +60,7 @@ window.addEventListener('resize', () => {
 });
 
 const protocol = window.location.protocol.replace("http", "ws");
-const endpoint = `${ protocol }//${ window.location.hostname }:${ window.location.port }/dotVote`;
+const endpoint = `${ protocol }//${ window.location.hostname }:${ window.location.port }/vote/${ window.location.pathname.split("/").pop() }`;
 const socket = new WebSocket(endpoint);
 
 socket.addEventListener("message", ev => {

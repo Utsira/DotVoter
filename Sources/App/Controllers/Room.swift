@@ -7,16 +7,11 @@
 
 import Foundation
 import Vapor
-import Model
 
-final class Room {
-	static let shared = Room()
+class Room<T: Encodable> {
 	
 	private var connections = SafeDictionary<String, WebSocketType>()
-	let cardManager = CardManager()
 	private let encoder = JSONEncoder()
-	
-	private init() {}
 	
 	func add(connection: WebSocketType, sender: String) {
 		connections[sender] = connection
@@ -29,7 +24,7 @@ final class Room {
 		})?.key
 	}
 	
-	func broadcast(updatedCards: ResponseType, toAllExcept sender: String) throws {
+	func broadcast(updatedCards: T, toAllExcept sender: String) throws {
 		let data = try encoder.encode(updatedCards)
 		connections.forEach { (id, socket) in
 			guard sender != id else { return }
@@ -37,7 +32,7 @@ final class Room {
 		}
 	}
 	
-	func broadcast(updatedCards: ResponseType) throws {
+	func broadcast(updatedCards: T) throws {
 		let data = try encoder.encode(updatedCards)
 		connections.forEach { (id, socket) in
 			socket.send(data, promise: nil)

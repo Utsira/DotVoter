@@ -6,6 +6,7 @@ extension RoutesTestCase {
         ("testCannotDownvoteCardAtZeroVotes", testCannotDownvoteCardAtZeroVotes),
         ("testCannotUpvoteNonExistentCard", testCannotUpvoteNonExistentCard),
         ("testEditCard", testEditCard),
+        ("testMultipleRooms", testMultipleRooms),
         ("testNewCard", testNewCard),
         ("testResultSuccess", testResultSuccess),
         ("testUpVoteCard", testUpVoteCard),

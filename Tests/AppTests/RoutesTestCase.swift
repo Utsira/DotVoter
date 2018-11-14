@@ -21,15 +21,16 @@ class RoutesTestCase: XCTestCase {
 	
 	private let decoder = JSONDecoder()
 	private let encoder = JSONEncoder()
+	private let roomId = "demo"
 	
 	override func setUp() {
 		super.setUp()
-		Room.shared.cardManager.resetAndAddTestCards()
+		RoomController.shared.rooms[roomId]?.cardManager.resetAndAddTestCards()
 	}
 	
-	func newSocket() throws -> MockWebSocket {
+	func newSocket(roomId: String = "test") throws -> MockWebSocket {
 		let socket = MockWebSocket()
-		try SocketController.openConnection(socket: socket, senderId: UUID().uuidString)
+		try RoomController.shared.openConnection(socket: socket, roomId: roomId, senderId: UUID().uuidString)
 		return socket
 	}
 	
@@ -84,12 +85,39 @@ class RoutesTestCase: XCTestCase {
 		XCTAssertEqual(result, resultDecoded)
 	}
 	
-	func testNewCard() throws {
+	func testNewCard() {
 		do {
 			let socket = try newSocket()
 			let partial = PartialCard(id: UUID(), message: "new card", category: "default", voteCount: 0)
 			let result = try performAction(.new, on: partial, with: socket)
 			XCTAssertNotNil(result)
+		} catch {
+			XCTFail(String(describing: error))
+		}
+	}
+	
+	func testMultipleRooms() {
+		do {
+			let socket1 = try newSocket(roomId: "room1")
+			let socket2 = try newSocket(roomId: "room2")
+			let partial1 = PartialCard(id: UUID(), message: "new card in room1", category: "default", voteCount: 0)
+			let partial2 = PartialCard(id: UUID(), message: "new card in room2", category: "default", voteCount: 0)
+			let result1 = try performAction(.new, on: partial1, with: socket1)
+			XCTAssertNotNil(result1)
+			let result2 = try performAction(.new, on: partial2, with: socket2)
+			XCTAssertNotNil(result2)
+			do {
+				try performAction(.edit, on: partial1, with: socket2)
+				XCTFail("should've thrown")
+			} catch let error as CardError {
+				XCTAssertEqual(error, .cardCouldNotBeFound)
+			}
+			do {
+				try performAction(.upVote, on: partial2, with: socket1)
+				XCTFail("should've thrown")
+			} catch let error as CardError {
+				XCTAssertEqual(error, .cardCouldNotBeFound)
+			}
 		} catch {
 			XCTFail(String(describing: error))
 		}
