@@ -1,5 +1,6 @@
 {
     "public": true,
+    "alias": "DotVoter",
     "features": {
         "cloud": "v2"
     }
