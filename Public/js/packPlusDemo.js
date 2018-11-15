@@ -16,6 +16,7 @@ function setupViz(dataset) {
     .color("message")
     // .width(window.innerWidth)
     .legend(false)
+    .tooltip(false)
     .mouse({
       "click": (point, viz) => {
         upVote(point.id);
@@ -32,10 +33,10 @@ function upVote(id) {
   socket.send(JSON.stringify(payload));
 }
 
-function newCard(message) {
+function newCard(message, category) {
   const payload = {
     action: "new",
-    card: { voteCount: 1, message: message, category: "glad" }
+    card: { voteCount: 1, message: message, category: category }
   };
   socket.send(JSON.stringify(payload));
 }
@@ -44,12 +45,14 @@ function setupForm() {
   const form = document.getElementById("newCard");
   form.addEventListener("submit", ev => {
     const message = ev.srcElement.elements.message.value;
+    const dropDown = ev.srcElement.category;
+    const selectedCategory = dropDown.options[dropDown.selectedIndex].value;
     ev.srcElement.elements.message.value = "";
     ev.preventDefault();
     if (message.trim() == "") {
       return;
     }
-    newCard(message)
+    newCard(message, selectedCategory);
     return;
   });
 }
