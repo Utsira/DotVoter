@@ -44,15 +44,11 @@ final class CardManager {
 	func resetAndAddTestCards() {
 		reset()
 		let partials = [
-			PartialCard(id: nil, message: "I miss the sofas in Bader", category: "sad", voteCount: 1),
-			PartialCard(id: nil, message: "iOS social is coming up", category: "glad", voteCount: 2),
-			PartialCard(id: nil, message: "Apple's prices are up 20%", category: "mad", voteCount: 1),
-			PartialCard(id: nil, message: "I cracked the back of my iPhone XR", category: "sad", voteCount: 1),
-			PartialCard(id: nil, message: "There's still a camera bump", category: "sad", voteCount: 2),
-			PartialCard(id: nil, message: "Just 31 sleeps 'til Xmas", category: "glad", voteCount: 1),
-			PartialCard(id: nil, message: "TAB showing up a lot in iOS Goodies", category: "glad", voteCount: 1),
-			PartialCard(id: nil, message: "My UITests passed on 3rd retry", category: "glad", voteCount: 1),
-			PartialCard(id: nil, message: "It's 2018 and there're still no hoverboards", category: "mad", voteCount: 1)
+			PartialCard(id: nil, message: "That one slide with the ComicSans 🤦‍♂️", category: "mad", voteCount: 3),
+			PartialCard(id: nil, message: "Still using Intel silicon in 🖥", category: "mad", voteCount: 2),
+			PartialCard(id: nil, message: "I don't have to plug the ✏️ into the ⚡️ port anymore", category: "glad", voteCount: 1),
+			PartialCard(id: nil, message: "Prices 📈 20% across the board", category: "glad", voteCount: 2),
+			PartialCard(id: nil, message: "♻️ Aluminum!", category: "glad", voteCount: 2)
 		]
 		partials.forEach { card in
 			cards.append(card.complete(with: UUID().uuidString, id: UUID()))

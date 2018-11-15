@@ -1,22 +1,27 @@
-
 let visualization;
 
 function setupViz(dataset) {
   visualization = d3plus.viz()
     .container("#viz")
+    .title("Autumn Event")
     .data(dataset)
     .type("bubbles")
     .id(["category", "id"])
     .depth(1)
-    .size((point) => {
-      return Math.random() + point.voteCount * 2;
+    .size({
+      "scale": {
+        "range": {
+          "min": 50,
+          "max": 100
+        }
+      },
+      "value": "voteCount"
     })
-    //  .size({"value": "VoteCount"})//, "scale": {"min": 1}})
     .text({ "category": "category", "id": "message" })
     .color("message")
     // .width(window.innerWidth)
     .legend(false)
-    .tooltip(false)
+   // .tooltip(false)
     .mouse({
       "click": (point, viz) => {
         upVote(point.id);
@@ -63,7 +68,7 @@ window.addEventListener('resize', () => {
 });
 
 const protocol = window.location.protocol.replace("http", "ws");
-const endpoint = `${ protocol }//${ window.location.hostname }:${ window.location.port }/vote/${ window.location.pathname.split("/").pop() }`;
+const endpoint = `${protocol}//${window.location.hostname}:${window.location.port}/vote/${window.location.pathname.split("/").pop()}`;
 const socket = new WebSocket(endpoint);
 
 socket.addEventListener("message", ev => {
